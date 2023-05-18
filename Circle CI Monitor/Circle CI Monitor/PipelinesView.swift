@@ -70,7 +70,12 @@ struct PipelinesView: View {
                                     }
                                 }
                             } header: {
-                                PipelineView(pipeline: pipelineViewData.pipeline, state: pipelineViewData.pipelineState)
+                                PipelineView(pipeline: pipelineViewData.pipeline, state: pipelineViewData.pipelineState) {
+                                    Task {
+                                        try await api.retryFromFailed(forWorkflow: pipelineViewData.workflows.first!.id)
+                                        await reload()
+                                    }
+                                }
                             }
                         }
                     }

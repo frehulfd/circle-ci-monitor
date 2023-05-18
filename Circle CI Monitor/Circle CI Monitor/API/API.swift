@@ -136,4 +136,23 @@ struct API {
         
         return try Self.otherJSONDecoder.decode(WorkflowJobs.self, from: data.0)
     }
+    
+    func retryFromFailed(forWorkflow id: String) async throws {
+        _ = try await urlSession.data(for: .retryWorkflowFromFailed(id: id))
+    }
+}
+
+extension URLRequest {
+    static func retryWorkflowFromFailed(id: String) -> URLRequest {
+        let url = URL(string: "https://circleci.com/api/v2/workflow/\(id)/rerun")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = """
+{
+    "from_failed": true
+}
+""".data(using: .utf8)!
+        urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        return urlRequest
+    }
 }

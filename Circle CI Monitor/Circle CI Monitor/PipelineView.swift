@@ -10,10 +10,11 @@ import SwiftUI
 struct PipelineView: View {    
     let pipeline: Pipeline
     let state: PipelineViewData.State
+    let retry: () -> Void
     
     @Environment(\.openURL)
     private var openURL
-    
+        
     var body: some View {
         VStack {
             Divider()
@@ -70,8 +71,26 @@ struct PipelineView: View {
                 .foregroundColor(.white)
                 .background(Capsule().foregroundColor(state.capsuleColor))
                             
+                if state == .failed {
+                    Button {
+                        retry()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.arrow.circlepath")
+                            Text("Retry")
+                        }
+                        .padding(8)
+                        .background {
+                            Capsule()
+                                .foregroundColor(.gray)
+                        }
+                        .foregroundColor(.white)
+                    }
+                    .buttonStyle(.borderless)
+                }
+                
                 VStack {
-                    Text("iOSApp")
+                    Text(pipeline.projectSlug.components(separatedBy: "/").last ?? "")
                         .font(.headline)
                     
                     Text("# \(pipeline.number)")
@@ -149,10 +168,14 @@ extension PipelineViewData.State {
 
 struct PipelineView_Previews: PreviewProvider {
     static var previews: some View {
-        PipelineView(pipeline: Pipeline.fixture(), state: .running)
-        PipelineView(pipeline: Pipeline.fixture(), state: .waiting)
-        PipelineView(pipeline: Pipeline.fixture(), state: .succeeded)
-        PipelineView(pipeline: Pipeline.fixture(), state: .failed)
+        PipelineView(pipeline: Pipeline.fixture(), state: .running) { }
+            .previewDisplayName("Running")
+        PipelineView(pipeline: Pipeline.fixture(), state: .waiting) { }
+            .previewDisplayName("Waiting")
+        PipelineView(pipeline: Pipeline.fixture(), state: .succeeded) { }
+            .previewDisplayName("Success")
+        PipelineView(pipeline: Pipeline.fixture(), state: .failed) { }
+            .previewDisplayName("Failed")
     }
 }
 

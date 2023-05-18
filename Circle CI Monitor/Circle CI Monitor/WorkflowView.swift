@@ -22,9 +22,22 @@ struct WorkflowView: View {
     @Environment(\.openURL)
     private var openURL
     
+    @State
+    private var isExpanded = false
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: "arrowtriangle.forward.fill")
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .buttonStyle(.plain)
+
                 Button {
                     openURL(workflow.url)
                 } label: {
@@ -46,10 +59,13 @@ struct WorkflowView: View {
             }
             .padding([.top, .bottom], 8)
             
-            ForEach(workflowJobs, id: \.id) { job in
-                WorkflowJobView(workflow: workflow,
-                                workflowJob: job)
+            if isExpanded {
+                ForEach(workflowJobs, id: \.id) { job in
+                    WorkflowJobView(workflow: workflow,
+                                    workflowJob: job)
                     .padding([.bottom], 2)
+                    .padding(.leading, 20)
+                }
             }
         }
     }
@@ -57,6 +73,8 @@ struct WorkflowView: View {
 
 struct WorkflowView_Previews: PreviewProvider {
     static var previews: some View {
-        WorkflowView(workflow: .fixture(), workflowJobs: [])
+        WorkflowView(workflow: .fixture(), workflowJobs: [
+            .fixture(startedAt: .now.addingTimeInterval(-100), name: "Test part", status: .running)
+        ])
     }
 }
