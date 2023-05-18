@@ -86,7 +86,7 @@ struct PipelineView: View {
                         }
                         .foregroundColor(.white)
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.plain)
                 }
                 
                 VStack {
