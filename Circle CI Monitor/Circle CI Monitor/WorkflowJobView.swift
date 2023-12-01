@@ -22,58 +22,84 @@ struct WorkflowJobView: View {
     @Environment(\.openURL)
     private var openURL
     
+    @Environment(\.api)
+    private var api
+    
+    @State private var isExpanded: Bool = false
+    @State private var isLoading: Bool = false
+    @State private var metadata: [JobTestMetadata] = []
+    @State private var hasNoFailures: Bool = false
+    
+    @State private var errorMessage: String? = nil
+    
     var body: some View {
         TimelineView(.periodic(from: Date(), by: 1)) { _ in
-            HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .center, spacing: 8) {
-                    Group {
-                        switch workflowJob.status {
-                        case .running:
-                            SpinningView(secondsPerRotation: 1) {
-                                Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
-                            }
-                        case .notRunning:
-                            Image(systemName: "pause.circle.fill")
-                        case .success:
-                            Image(systemName: "checkmark.circle.fill")
-                        case .failed:
-                            Image(systemName: "x.circle.fill")
-                        case .blocked, .queued:
-                            Image(systemName: "circle.dashed")
-                        case .canceled:
-                            Image(systemName: "x.circle.fill")
-                        }
-                    }
-                    .foregroundColor(workflowJob.statusColor)
-                    .imageScale(.large)
+                    WorkflowJobStatusImageView(status: workflowJob.status)
                     
                     Button {
-                        openURL(workflowJob.url(fromWorkflow: workflow))
+                        if metadata.isEmpty && !hasNoFailures {
+                            loadMetadata()
+                        } else {
+                            withAnimation {
+                                isExpanded.toggle()
+                            }
+                        }
                     } label: {
                         Label {
                             Text(workflowJob.name)
                         } icon: {
-                            Image(systemName: "chevron.right")
+                            if isLoading {
+                                ProgressView().controlSize(.mini)
+                            } else {
+                                Image(systemName: "chevron.right")
+                                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                            }
                         }
                         .labelStyle(.iconOnTrailing())
                         .font(.subheadline)
                     }
                     .buttonStyle(.plain)
                     
-                }
-                
-                Spacer()
-                
-                Group {
-                    if let time = timeDifferenceString() {
-                        Text(time)
-                    } else if workflowJob.status == .canceled {
-                        Text("Canceled")
+                    Spacer()
+                    
+                    Group {
+                        if let time = timeDifferenceString() {
+                            Text(time)
+                        } else if workflowJob.status == .canceled {
+                            Text("Canceled")
+                        }
                     }
+                    .font(.subheadline.monospacedDigit())
                 }
-                .font(.subheadline.monospacedDigit())
+                
+                if (!metadata.isEmpty || hasNoFailures) && isExpanded {
+                    Group {
+                        if !metadata.isEmpty {
+                            JobTestMetadataView(metadata: metadata)
+                        }
+                        
+                        if hasNoFailures {
+                            Text("No failures in job! 🎉").font(.subheadline)
+                        }
+                    }
+                    .transition(.opacity)
+                }
             }
         }
+        .alert("Error Loading Tests Metadata", isPresented: .init(get: {
+            errorMessage != nil
+        }, set: { isShown in
+            if !isShown {
+                errorMessage = nil
+            }
+        })) {
+            Text("OK")
+        } message: {
+            Text(errorMessage ?? "Failed to load")
+        }
+
     }
     
     func timeDifferenceString() -> String? {
@@ -84,6 +110,28 @@ struct WorkflowJobView: View {
         let time = endTime.timeIntervalSince(startTime)
         
         return dateDifferenceFormatter.string(from: time)
+    }
+    
+    func loadMetadata() {
+        Task {
+            guard let number = workflowJob.jobNumber else {
+                return
+            }
+            isLoading = true
+            do {
+                let result = try await api.getWorkflowJobTestMetadata(forJobNumber: number)
+                
+                metadata = result.filter({ $0.result == "failure" })
+                hasNoFailures = metadata.isEmpty
+                withAnimation {
+                    isExpanded = true
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isLoading = false
+        }
+
     }
 }
 
@@ -98,9 +146,9 @@ struct WorkflowJobView_Previews: PreviewProvider {
     }
 }
 
-private extension WorkflowJob {
+private extension WorkflowJob.Status {
     var statusColor: Color {
-        switch status {
+        switch self {
         case .success:
             return .green
         case .failed:
@@ -112,5 +160,32 @@ private extension WorkflowJob {
         case .running:
             return .blue
         }
+    }
+}
+
+private struct WorkflowJobStatusImageView: View {
+    let status: WorkflowJob.Status
+    
+    var body: some View {
+        Group {
+            switch status {
+            case .running:
+                SpinningView(secondsPerRotation: 1) {
+                    Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
+                }
+            case .notRunning:
+                Image(systemName: "pause.circle.fill")
+            case .success:
+                Image(systemName: "checkmark.circle.fill")
+            case .failed:
+                Image(systemName: "x.circle.fill")
+            case .blocked, .queued:
+                Image(systemName: "circle.dashed")
+            case .canceled:
+                Image(systemName: "x.circle.fill")
+            }
+        }
+        .foregroundColor(status.statusColor)
+        .imageScale(.large)
     }
 }

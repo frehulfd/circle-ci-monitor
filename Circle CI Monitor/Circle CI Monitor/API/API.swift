@@ -137,6 +137,14 @@ struct API {
         return try Self.otherJSONDecoder.decode(WorkflowJobs.self, from: data.0)
     }
     
+    func getWorkflowJobTestMetadata(forJobNumber number: Int) async throws -> [JobTestMetadata] {
+        let data = try await urlSession.data(from: .workflowJobTestMetadata(forSlug: slug, jobNumber: number))
+        
+        let response = try Self.otherJSONDecoder.decode(JobTestMetadataResponse.self, from: data.0)
+        
+        return response.items
+    }
+    
     func retryFromFailed(forWorkflow id: String) async throws {
         _ = try await urlSession.data(for: .retryWorkflowFromFailed(id: id))
     }

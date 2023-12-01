@@ -33,21 +33,19 @@ struct WorkflowView: View {
                         isExpanded.toggle()
                     }
                 } label: {
-                    Image(systemName: "arrowtriangle.forward.fill")
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    HStack(alignment: .firstTextBaseline) {
+                        Image(systemName: "arrowtriangle.forward.fill")
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        Text("Workflow: \(workflow.name)")
+                            .font(.headline)
+                    }
                 }
                 .buttonStyle(.plain)
 
                 Button {
                     openURL(workflow.url)
                 } label: {
-                    Label {
-                        Text("Workflow: \(workflow.name)")
-                            .font(.headline)
-                    } icon: {
-                        Image(systemName: "chevron.right")
-                    }
-                    .labelStyle(.iconOnTrailing())
+                    Image(systemName: "link").foregroundStyle(.tint)
                 }
                 .buttonStyle(.plain)
                 

@@ -18,6 +18,8 @@
 		3F3C3CEC299BCF2600A9ADC2 /* Workflows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F3C3CE1299BCF2600A9ADC2 /* Workflows.swift */; };
 		3F3C3CED299BCF2600A9ADC2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F3C3CE2299BCF2600A9ADC2 /* Assets.xcassets */; };
 		3F3C3CEE299BCF2600A9ADC2 /* SpinningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F3C3CE3299BCF2600A9ADC2 /* SpinningView.swift */; };
+		3F416E692B1A233700FBCF3F /* JobTestMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F416E682B1A233700FBCF3F /* JobTestMetadata.swift */; };
+		3F416E6B2B1A2B9800FBCF3F /* JobTestMetadataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F416E6A2B1A2B9800FBCF3F /* JobTestMetadataView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +36,8 @@
 		3F3C3CE1299BCF2600A9ADC2 /* Workflows.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Workflows.swift; sourceTree = "<group>"; };
 		3F3C3CE2299BCF2600A9ADC2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		3F3C3CE3299BCF2600A9ADC2 /* SpinningView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpinningView.swift; sourceTree = "<group>"; };
+		3F416E682B1A233700FBCF3F /* JobTestMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTestMetadata.swift; sourceTree = "<group>"; };
+		3F416E6A2B1A2B9800FBCF3F /* JobTestMetadataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTestMetadataView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +74,7 @@
 				3F3C3CE2299BCF2600A9ADC2 /* Assets.xcassets */,
 				3F3C3CD7299BCF2600A9ADC2 /* CircleCI_Monitor.entitlements */,
 				3F3C3CDC299BCF2600A9ADC2 /* CircleCI_MonitorApp.swift */,
+				3F416E6A2B1A2B9800FBCF3F /* JobTestMetadataView.swift */,
 				3F3C3CD8299BCF2600A9ADC2 /* PipelinesView.swift */,
 				3F3C3CD9299BCF2600A9ADC2 /* PipelineView.swift */,
 				3F3C3CE3299BCF2600A9ADC2 /* SpinningView.swift */,
@@ -86,6 +91,7 @@
 				3F3C3CDF299BCF2600A9ADC2 /* WorkflowJobs.swift */,
 				3F3C3CE0299BCF2600A9ADC2 /* API.swift */,
 				3F3C3CE1299BCF2600A9ADC2 /* Workflows.swift */,
+				3F416E682B1A233700FBCF3F /* JobTestMetadata.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -167,8 +173,10 @@
 				3F3C3CEC299BCF2600A9ADC2 /* Workflows.swift in Sources */,
 				3F3C3CE6299BCF2600A9ADC2 /* WorkflowJobView.swift in Sources */,
 				3F3C3CE4299BCF2600A9ADC2 /* PipelinesView.swift in Sources */,
+				3F416E6B2B1A2B9800FBCF3F /* JobTestMetadataView.swift in Sources */,
 				3F3C3CE7299BCF2600A9ADC2 /* WorkflowView.swift in Sources */,
 				3F3C3CEB299BCF2600A9ADC2 /* API.swift in Sources */,
+				3F416E692B1A233700FBCF3F /* JobTestMetadata.swift in Sources */,
 				3F3C3CE9299BCF2600A9ADC2 /* Pipelines.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
