@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PipelineView: View {    
+struct PipelineView: View {
     let pipeline: Pipeline
     let state: PipelineViewData.State
     let retry: () -> Void
@@ -20,83 +20,35 @@ struct PipelineView: View {
             Divider()
             
             HStack(alignment: .center) {
-                Group {
-                    if let urlString = pipeline.trigger.actor.avatarUrl,
-                       let url = URL(string: urlString) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(1, contentMode: .fill)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Circle()
-                                .foregroundColor(.secondary)
-                        }
-                        
-                    } else {
-                        Circle()
-                            .foregroundColor(.secondary)
-                            .overlay(Image(systemName: "person.fill").foregroundColor(.primary))
-                    }
-                }
-                .frame(width: 30, height: 30)
-                .help(pipeline.trigger.actor.login)
-                            
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(pipeline.vcs.branch ?? "No Branch")
-                    
-                    Button {
-                        openURL(pipeline.vcs.commitURL)
-                    } label: {
-                        Label {
-                            revisionText
-                        } icon: {
-                            Image(systemName: "chevron.right")
-                        }
+                    HStack {
+                        avatarImage
+                            .frame(width: 30, height: 30)
+                            .help(pipeline.trigger.actor.login)
+                        
+                        branchName
                     }
-                    .buttonStyle(.plain)
+                    
+                    revisionLink
                 }
                 .labelStyle(.iconOnTrailing(spacing: 4))
                 .foregroundColor(.primary)
                 .lineLimit(nil)
                 
                 Spacer()
-
-                Label {
-                    Text(state.displayText)
-                } icon: {
-                    state.icon.imageScale(.large)
-                }
-                .padding(8)
-                .foregroundColor(.white)
-                .background(Capsule().foregroundColor(state.capsuleColor))
-                            
-                if state == .failed {
-                    Button {
-                        retry()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "exclamationmark.arrow.circlepath")
-                            Text("Retry")
-                        }
-                        .padding(8)
-                        .background {
-                            Capsule()
-                                .foregroundColor(.gray)
-                        }
-                        .foregroundColor(.white)
-                    }
-                    .buttonStyle(.plain)
-                }
+                
+                #if os(macOS)
+                retryButton
+                statusCapsule
+                #endif
                 
                 VStack {
-                    Text(pipeline.projectSlug.components(separatedBy: "/").last ?? "")
-                        .font(.headline)
-                    
-                    Text("# \(pipeline.number)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
+                    projectSlug
+                    pipelineNumber
+                    #if os(iOS)
+                    statusCapsule
+                    retryButton
+                    #endif
                 }
             }
             .padding([.top, .bottom], 8)
@@ -105,17 +57,90 @@ struct PipelineView: View {
         }
     }
     
-    private var revisionText: Text {
-        if let commit = pipeline.vcs.commit {
-            return (Text(pipeline.vcs.revision.prefix(6))
-                .font(.subheadline.bold()) + Text(" ") +
-            Text(commit.subject)
-                .font(.subheadline))
-                .underline()
+    @ViewBuilder
+    private var avatarImage: some View {
+        if let urlString = pipeline.trigger.actor.avatarUrl,
+           let url = URL(string: urlString) {
+            AsyncImage(url: url) { image in
+                image
+                    .resizable()
+                    .aspectRatio(1, contentMode: .fill)
+                    .clipShape(Circle())
+            } placeholder: {
+                Circle()
+                    .foregroundColor(.secondary)
+            }
+            
         } else {
-            return Text(pipeline.vcs.revision.prefix(6))
-                .font(.subheadline.bold())
-                .underline()
+            Circle()
+                .foregroundColor(.secondary)
+                .overlay(Image(systemName: "person.fill").foregroundColor(.primary))
+        }
+    }
+    
+    @ViewBuilder
+    private var branchName: some View {
+        Text(pipeline.vcs.branch ?? "No Branch")
+    }
+    
+    @ViewBuilder
+    private var revisionLink: some View {
+        Button {
+            openURL(pipeline.vcs.commitURL)
+        } label: {
+            Label {
+                if let commit = pipeline.vcs.commit {
+                    (Text(pipeline.vcs.revision.prefix(6))
+                        .font(.subheadline.bold()) + Text(" ") +
+                    Text(commit.subject)
+                        .font(.subheadline))
+                        .underline()
+                } else {
+                    Text(pipeline.vcs.revision.prefix(6))
+                        .font(.subheadline.bold())
+                        .underline()
+                }
+            } icon: {
+                Image(systemName: "chevron.right")
+            }
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var projectSlug: some View {
+        Text(pipeline.projectSlug.components(separatedBy: "/").last ?? "").font(.headline)
+    }
+    
+    @ViewBuilder
+    private var pipelineNumber: some View {
+        Text("# \(pipeline.number)")
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+    }
+    
+    @ViewBuilder
+    private var statusCapsule: some View {
+        Label {
+            Text(state.displayText)
+        } icon: {
+            state.icon.imageScale(.large)
+        }
+#if os(iOS)
+        .font(.caption2)
+        .padding(6)
+#elseif os(macOS)
+        .font(.body)
+        .padding(8)
+#endif
+        .foregroundColor(.white)
+        .background(Capsule().foregroundColor(state.capsuleColor))
+    }
+    
+    @ViewBuilder
+    private var retryButton: some View {
+        if state == .failed {
+            PipelineRetryButton(action: retry)
         }
     }
 }

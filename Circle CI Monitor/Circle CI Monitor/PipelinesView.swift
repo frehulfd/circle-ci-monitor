@@ -14,8 +14,9 @@ struct PipelinesView: View {
     @State
     private var pipelines: [PipelineViewData] = []
         
-    @State
-    private var isReloading: Bool = false
+    private var isReloading: Bool {
+        reloadCount > 0
+    }
     
     @State
     private var rotationAngle: CGFloat = 0
@@ -29,6 +30,12 @@ struct PipelinesView: View {
     @Environment(\.api)
     private var api
     
+    @State
+    private var reloadValue: Int = 0
+    
+    @State
+    private var reloadCount = 0
+    
     var body: some View {
         Group {
             if pipelines.isEmpty && isReloading {
@@ -37,112 +44,127 @@ struct PipelinesView: View {
                     ProgressView()
                 }
             } else if let error = errorMessage {
-                ZStack {
-                    Rectangle().foregroundColor(.clear)
-                    VStack {
-                        Spacer()
-                        
-                        GroupBox {
-                            VStack {
-                                Label("Error Parsing Pipelines", systemImage: "exclamationmark.triangle.fill")
-                                    .font(.headline)
-                                    .imageScale(.large)
-                                
-                                Text(error)
-                                    .font(.body)
-                            }
-                            .padding()
-                        }
-                        .frame(maxWidth: 500)
-                        
-                        Spacer()
-                    }
-                }
+                errorView(error)
             } else {
-                ScrollView {
-                    VStack {
-                        ForEach(pipelines, id: \.id) { pipelineViewData in
-                            Section {
-                                VStack {
-                                    ForEach(pipelineViewData.workflows, id: \.id) { workflow in
-                                        WorkflowView(workflow: workflow,
-                                                     workflowJobs: pipelineViewData.jobsForWorkflows[workflow.id] ?? [])
-                                    }
-                                }
-                            } header: {
-                                PipelineView(pipeline: pipelineViewData.pipeline, state: pipelineViewData.pipelineState) {
-                                    Task {
-                                        try await api.retryFromFailed(forWorkflow: pipelineViewData.workflows.first!.id)
-                                        await reload()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding([.leading, .trailing], 8)
-                }
-                .background(Color(nsColor: .controlBackgroundColor))
+                pipelinesView
             }
         }
         .toolbar {
             ToolbarItemGroup {
-                Button {
-                    Task {
-                        await reload()
-                    }
-                } label: {
-                    if isReloading {
-                        SpinningView(secondsPerRotation: 1) {
+                    Button {
+                        Task {
+                            await reload()
+                        }
+                    } label: {
+                        if isReloading {
+                            SpinningView(secondsPerRotation: 1) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                            }
+                        } else {
                             Image(systemName: "arrow.triangle.2.circlepath")
                         }
-                    } else {
-                        Image(systemName: "arrow.triangle.2.circlepath")
                     }
-                }
-                .disabled(isReloading)
+                    .disabled(isReloading)
                 
-                Picker(selection: $onlyMine) {
-                    Text("Only Mine")
-                        .bold()
-                        .tag(true)
-                        .help("Show only my pipelines")
-                    
-                    Text("All")
-                        .tag(false)
-                        .help("Show all pipelines")
-                } label: {
-                    Text("Test")
-                }
-                .pickerStyle(.segmented)
-                .foregroundColor(.blue)
+                    Picker(selection: $onlyMine) {
+                        Text("Only Mine")
+                            .bold()
+                            .tag(true)
+                            .help("Show only my pipelines")
+                        
+                        Text("All")
+                            .tag(false)
+                            .help("Show all pipelines")
+                    } label: {
+                        Text("Test")
+                    }
+                    .pickerStyle(.segmented)
+                    .foregroundColor(.blue)
             }
         }
-        .task {
+        .task(id: reloadValue) {
             await reload()
         }
-        .onChange(of: onlyMine, perform: { _ in
-            Task {
-                await reload()
-            }
-        })
+        .onChange(of: onlyMine, initial: onlyMine) {
+            reloadValue += 1
+        }
         .onReceive(refreshTimer) { _ in
-            Task {
-                await reload()
-            }
+            reloadValue += 1
         }
     }
     
     private func reload() async {
-        isReloading = true
+        print("Starting Reload")
+        reloadCount += 1
         errorMessage = nil
-        defer { isReloading = false }
+        defer {
+            reloadCount -= 1
+            print("Ended reload")
+        }
         
         do {
             pipelines = try await api.getPipelineViewData(onlyMine: onlyMine)
+        } catch is CancellationError {
+            print("Cancelled")
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            print("URL Cancelled")
         } catch {
             errorMessage = "\(error)"
             print("ERROR: \(error)")
         }
+    }
+    
+    @ViewBuilder
+    private func errorView(_ message: String) -> some View {
+        ZStack {
+            Rectangle().foregroundColor(.clear)
+            VStack {
+                Spacer()
+                
+                GroupBox {
+                    VStack {
+                        Label("Error Parsing Pipelines", systemImage: "exclamationmark.triangle.fill")
+                            .font(.headline)
+                            .imageScale(.large)
+                        
+                        Text(message).font(.body)
+                    }
+                    .padding()
+                }
+                .frame(maxWidth: 500)
+                
+                Spacer()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var pipelinesView: some View {
+        ScrollView {
+            LazyVStack {
+                ForEach(pipelines, id: \.id) { pipelineViewData in
+                    Section {
+                        VStack {
+                            ForEach(pipelineViewData.workflows, id: \.id) { workflow in
+                                WorkflowView(workflow: workflow,
+                                             workflowJobs: pipelineViewData.jobsForWorkflows[workflow.id] ?? [])
+                            }
+                        }
+                    } header: {
+                        PipelineView(pipeline: pipelineViewData.pipeline, state: pipelineViewData.pipelineState) {
+                            Task {
+                                try await api.retryFromFailed(forWorkflow: pipelineViewData.workflows.first!.id)
+                                reloadValue += 1
+                            }
+                        }
+                    }
+                }
+            }
+            .padding([.leading, .trailing], 8)
+        }
+        #if os(macOS)
+        .background(Color(nsColor: .controlBackgroundColor))
+        #endif
     }
 }
 

@@ -104,10 +104,15 @@ struct API {
         var viewData: [PipelineViewData] = []
         
         for pipeline in pipelines.items {
+            
+            guard !Task.isCancelled else { throw CancellationError() }
+            
             let workflows = try await getWorkflows(forPipeline: pipeline.id)
             var jobsByWorkflowId: [String: [WorkflowJob]] = [:]
             
             for workflow in workflows.items {
+                guard !Task.isCancelled else { throw CancellationError() }
+                
                 let jobs = try await getWorkflowJobs(forWorkflow: workflow.id)
                 
                 jobsByWorkflowId[workflow.id] = jobs.items
