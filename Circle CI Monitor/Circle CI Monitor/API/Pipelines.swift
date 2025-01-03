@@ -33,6 +33,7 @@ struct Pipeline: Codable {
             case api = "api"
             case webhook = "webhook"
             case scheduledPipeline = "scheduled_pipeline"
+            case unknown = ""
         }
         
         struct Actor: Codable {
@@ -54,7 +55,7 @@ struct Pipeline: Codable {
         let originRepositoryUrl: String
         let targetRepositoryUrl: String
         let revision: String
-        let providerName: String
+        let providerName: String?
         let commit: Commit?
         let branch: String?
     }

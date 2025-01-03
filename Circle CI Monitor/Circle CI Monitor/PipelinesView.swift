@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-private let refreshTimer = Timer.publish(every: 10, tolerance: 2, on: .main, in: .default, options: nil).autoconnect()
-
 struct PipelinesView: View {
     
     @State
@@ -52,9 +50,7 @@ struct PipelinesView: View {
         .toolbar {
             ToolbarItemGroup {
                     Button {
-                        Task {
-                            await reload()
-                        }
+                        reloadValue += 1
                     } label: {
                         if isReloading {
                             SpinningView(secondsPerRotation: 1) {
@@ -83,12 +79,13 @@ struct PipelinesView: View {
             }
         }
         .task(id: reloadValue) {
-            await reload()
+            while !Task.isCancelled {
+                await reload()
+                
+                try? await Task.sleep(for: .seconds(15))
+            }
         }
         .onChange(of: onlyMine, initial: onlyMine) {
-            reloadValue += 1
-        }
-        .onReceive(refreshTimer) { _ in
             reloadValue += 1
         }
     }
