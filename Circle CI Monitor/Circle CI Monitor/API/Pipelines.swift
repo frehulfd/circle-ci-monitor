@@ -61,7 +61,7 @@ struct Pipeline: Codable {
     }
     
     let id: String
-    let errors: [String]
+    let errors: [[String: String]]
     let projectSlug: String
     let updatedAt: Date
     let number: Int
